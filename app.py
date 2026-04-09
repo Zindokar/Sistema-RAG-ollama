@@ -1,8 +1,3 @@
-"""
-app.py — Pipeline RAG + Interfaz Gradio
-Sistema de Q&A sobre Khan Academy
-"""
-
 import gradio as gr
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -13,20 +8,10 @@ from langchain_classic.chains.combine_documents import create_stuff_documents_ch
 from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_chroma import Chroma
 
-
-# =====================================================
-# CONFIGURACIÓN
-# =====================================================
-
 CHROMA_DIR = "./chroma_db"
 COLLECTION_NAME = "khan_academy"
 EMBEDDING_MODEL = "nomic-embed-text:v1.5"
 LLM_MODEL = "mistral:latest"
-
-
-# =====================================================
-# INICIALIZACIÓN
-# =====================================================
 
 def cargar_vectorstore():
     embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
@@ -75,39 +60,32 @@ def crear_chain(vectorstore, k=5, score_threshold=0.3, topic_filter="Todos"):
     )
 
     qa_prompt = ChatPromptTemplate.from_messages([
-        ("system", """Eres un asistente educativo especializado en el contenido de Khan Academy.
-Tu tarea es responder preguntas basándote ÚNICAMENTE en el contexto proporcionado
-(fragmentos de transcripciones de vídeos educativos).
-
-Reglas:
-1. Basa tu respuesta exclusivamente en el contexto proporcionado.
-2. Si la información no está en el contexto, responde exactamente:
-   "No dispongo de información sobre ese tema en las transcripciones disponibles."
-3. Cuando sea posible, menciona el título del vídeo de donde extraes la información.
-4. Responde en español de forma clara y didáctica.
-5. Si la pregunta es ambigua, pide aclaración.
-
-Contexto recuperado:
-{context}"""),
+        ("system", 
+         """Eres un asistente educativo especializado en el contenido de Khan Academy.
+            Tu tarea es responder preguntas basándote ÚNICAMENTE en el contexto proporcionado
+            (fragmentos de transcripciones de vídeos educativos).
+            
+            Reglas:
+            1. Basa tu respuesta exclusivamente en el contexto proporcionado.
+            2. Si la información no está en el contexto, responde exactamente:
+               "No dispongo de información sobre ese tema en las transcripciones disponibles."
+            3. Cuando sea posible, menciona el título del vídeo de donde extraes la información.
+            4. Responde en español de forma clara y didáctica.
+            5. Si la pregunta es ambigua, pide aclaración.
+            
+            Contexto recuperado:
+            {context}"""),
         MessagesPlaceholder("chat_history"),
         ("human", "{input}"),
     ])
-
     combine_docs_chain = create_stuff_documents_chain(llm, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, combine_docs_chain)
-
     return rag_chain
-
-
-# =====================================================
-# ESTADO GLOBAL
-# =====================================================
 
 vectorstore = cargar_vectorstore()
 topics_disponibles = obtener_topics(vectorstore)
 chain_cache: dict = {}
 store: dict[str, BaseChatMessageHistory] = {}
-
 
 def get_chain(k, score_threshold, topic_filter):
     key = (float(k), float(score_threshold), topic_filter)
@@ -115,16 +93,10 @@ def get_chain(k, score_threshold, topic_filter):
         chain_cache[key] = crear_chain(vectorstore, int(k), float(score_threshold), topic_filter)
     return chain_cache[key]
 
-
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     if session_id not in store:
         store[session_id] = ChatMessageHistory()
     return store[session_id]
-
-
-# =====================================================
-# LÓGICA DE RESPUESTA
-# =====================================================
 
 def responder(mensaje, historial, k, score_threshold, topic_filter):
     if not mensaje or not mensaje.strip():
@@ -176,15 +148,12 @@ def responder(mensaje, historial, k, score_threshold, topic_filter):
         historial.append({"role": "assistant", "content": f"Error: {str(e)}"})
         return historial, f"**Error:** {str(e)}"
 
-
 def limpiar_historial():
     store.clear()
     return [], "### Fuentes\n\n*Realiza una consulta para ver las fuentes.*"
 
-
 def aplicar_parametros(k, score_threshold, topic_filter):
     return f"Parámetros aplicados: k={int(k)}, umbral={score_threshold}, tema={topic_filter}"
-
 
 def exportar_conversacion(historial):
     if not historial:
@@ -194,11 +163,6 @@ def exportar_conversacion(historial):
         rol = "Usuario" if msg["role"] == "user" else "Asistente"
         lineas.append(f"**{rol}:** {msg['content']}\n")
     return "\n".join(lineas)
-
-
-# =====================================================
-# INTERFAZ GRADIO
-# =====================================================
 
 def crear_interfaz():
     with gr.Blocks(title="RAG Khan Academy", theme=gr.themes.Soft()) as demo:
@@ -236,9 +200,7 @@ def crear_interfaz():
                 )
 
             with gr.Column(scale=2):
-
                 gr.Markdown("## Parámetros del Retriever")
-
                 slider_k = gr.Slider(
                     minimum=1, maximum=10, value=5, step=1,
                     label="Fragmentos a recuperar (k)",
@@ -255,16 +217,13 @@ def crear_interfaz():
                     label="Filtrar por tema",
                     info="Limita la búsqueda a un área temática",
                 )
-
                 btn_aplicar = gr.Button("Aplicar parámetros", variant="primary")
                 estado = gr.Textbox(
                     label="Estado",
                     value="Parámetros por defecto: k=5, umbral=0.3, tema=Todos",
                     interactive=False,
                 )
-
                 gr.Markdown("---")
-
                 panel_fuentes = gr.Markdown(
                     value="### Fuentes\n\n*Realiza una consulta para ver las fuentes.*"
                 )
@@ -303,11 +262,6 @@ def crear_interfaz():
         )
 
     return demo
-
-
-# =====================================================
-# PUNTO DE ENTRADA
-# =====================================================
 
 if __name__ == "__main__":
     print("Iniciando sistema RAG Khan Academy...")
