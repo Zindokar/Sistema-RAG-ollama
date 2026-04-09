@@ -57,7 +57,7 @@ cd proyecto-rag-khan
 
 Puedes usar el gestor de entornos estándar de Python (`venv`) o el moderno y rápido [`uv`](https://docs.astral.sh/uv/).
 
-> ⚠️ **Requisito:** Python **3.11** o superior.
+> **Requisito:** Python **3.11** o superior.
 
 ---
 
@@ -176,10 +176,10 @@ Una vez instalado, descarga los modelos que usará el proyecto:
 
 ```bash
 # Modelo de lenguaje (para generar las respuestas)
-ollama pull llama3.2
+ollama pull mistral:latest
 
 # Modelo de embeddings (para la búsqueda semántica)
-ollama pull nomic-embed-text
+ollama pull nomic-embed-text:v1.5
 ```
 
 Verifica que ambos modelos están disponibles:
@@ -191,9 +191,9 @@ ollama list
 Deberías ver algo como:
 
 ```
-NAME                       SIZE      MODIFIED
-llama3.2:latest            2.0 GB    1 minute ago
-nomic-embed-text:latest    274 MB    2 minutes ago
+NAME                      SIZE   
+mistral:latest            4.0 GB
+nomic-embed-text:v1.5     274 MB
 ```
 
 > **Nota:** Ollama debe estar ejecutándose en segundo plano mientras uses la aplicación. En Linux normalmente arranca solo como servicio; en macOS/Windows se inicia al abrir la aplicación de Ollama.
@@ -261,7 +261,7 @@ Pregunta del usuario
  Construcción del prompt  (contexto + historial + pregunta)
         │
         ▼
- Generación con llama3.2  (vía Ollama)
+ Generación con mistral  (vía Ollama)
         │
         ▼
  Respuesta + fuentes citadas
@@ -286,8 +286,8 @@ O abre la aplicación de Ollama si estás en macOS/Windows.
 Asegúrate de haber descargado ambos modelos:
 
 ```bash
-ollama pull llama3.2
-ollama pull nomic-embed-text
+ollama pull mistral:latest
+ollama pull nomic-embed-text:v1.5
 ```
 
 ### La base de datos `chroma_db` está vacía o da errores
